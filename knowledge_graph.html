@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《公安信息化应用基础》公安知识图谱与警务能力画像</title>
+<!-- ECharts 双保险加载：优先本地 echarts.min.js（内网/离线可用），若本地缺失自动回退 CDN（GitHub/其他电脑可用） -->
+<script src="echarts.min.js"></script>
+<script>window.echarts || document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');</script>
+<style>
+  :root {
+    --bg-0: #050b1e;
+    --bg-1: #081130;
+    --bg-2: #0d1c48;
+    --panel: rgba(9, 19, 50, 0.68);
+    --panel-solid: #0d1c48;
+    --line: rgba(69, 130, 255, 0.32);
+    --line-cyan: rgba(0, 220, 255, 0.45);
+    --blue: #3b82f6;
+    --blue-bright: #60a5fa;
+    --blue-deep: #1e3a8a;
+    --cyan: #22d3ee;
+    --red: #ef4444;
+    --red-bright: #f87171;
+    --gold: #fbbf24;
+    --green: #34d399;
+    --purple: #a78bfa;
+    --text: #eaf2ff;
+    --text-dim: #9db4d8;
+    --text-faint: #6f86ad;
+    --glow-blue: 0 0 20px rgba(59, 130, 246, 0.65), 0 0 6px rgba(96, 165, 250, 0.7);
+    --glow-cyan: 0 0 20px rgba(34, 211, 238, 0.6), 0 0 6px rgba(34, 211, 238, 0.7);
+    --glow-red: 0 0 20px rgba(239, 68, 68, 0.65), 0 0 6px rgba(248, 113, 113, 0.7);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(1100px 720px at 78% -12%, rgba(34, 211, 238, 0.20), transparent 58%),
+      radial-gradient(900px 620px at 8% 24%, rgba(59, 130, 246, 0.22), transparent 55%),
+      radial-gradient(860px 620px at 50% 118%, rgba(239, 68, 68, 0.12), transparent 62%),
+      radial-gradient(600px 420px at 30% 70%, rgba(14, 60, 150, 0.30), transparent 70%),
+      linear-gradient(165deg, var(--bg-0) 0%, var(--bg-1) 40%, #071233 72%, #0a1738 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* ====== 背景刑技水印（指纹 / 足迹 / 法医放大镜·DNA / 技术网格 / 线框立方体 / 六边形HUD） ====== */
+  .bg-watermarks {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .wm { position: absolute; background-repeat: no-repeat; background-size: contain; }
+  .wm-grid {
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'400'%20height%3D'400'%3E%3Cdefs%3E%3Cpattern%20id%3D'g'%20width%3D'52'%20height%3D'52'%20patternUnits%3D'userSpaceOnUse'%3E%3Cpath%20d%3D'M52%200%20H0%20V52'%20fill%3D'none'%20stroke%3D'%231a3c86'%20stroke-width%3D'1'%20opacity%3D'0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D'400'%20height%3D'400'%20fill%3D'url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.28;
+  }
+  /* 参考截图：发光线框立方体（中央偏右） */
+  .wm-cube {
+    left: 50%; top: 16%; width: 420px; height: 420px;
+    transform: translateX(60px);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20300%20300'%3E%3Cg%20fill%3D'none'%20stroke%3D'%233b82f6'%20stroke-width%3D'1.4'%20opacity%3D'0.55'%3E%3Cpath%20d%3D'M150%2040%20L250%2090%20L150%20140%20L50%2090%20Z'/%3E%3Cpath%20d%3D'M50%2090%20L150%20140%20L150%20260%20L50%20210%20Z'/%3E%3Cpath%20d%3D'M250%2090%20L150%20140%20L150%20260%20L250%20210%20Z'/%3E%3Cpath%20d%3D'M150%2040%20L250%2090%20L250%20210%20L150%20260%20L50%20210%20L50%2090%20Z'%20opacity%3D'0.35'/%3E%3C/g%3E%3Cg%20fill%3D'none'%20stroke%3D'%2322d3ee'%20stroke-width%3D'5'%20opacity%3D'0.5'%3E%3Cpath%20d%3D'M150%2040%20L250%2090%20L150%20140%20L50%2090%20Z'/%3E%3Cpath%20d%3D'M250%2090%20L150%20140%20L150%20260'/%3E%3Cpath%20d%3D'M50%2090%20L150%20140%20L150%20260'/%3E%3C/g%3E%3Cg%20fill%3D'none'%20stroke%3D'%2322d3ee'%20stroke-width%3D'1.2'%20opacity%3D'0.9'%3E%3Cpath%20d%3D'M150%2040%20L250%2090%20L150%20140%20L50%2090%20Z'/%3E%3Cpath%20d%3D'M250%2090%20L150%20140%20L150%20260'/%3E%3Cpath%20d%3D'M50%2090%20L150%20140%20L150%20260'/%3E%3C/g%3E%3Cg%20fill%3D'%2322d3ee'%20opacity%3D'0.9'%3E%3Ccircle%20cx%3D'150'%20cy%3D'40'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'250'%20cy%3D'90'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'150'%20cy%3D'140'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'50'%20cy%3D'90'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'150'%20cy%3D'260'%20r%3D'2.5'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.16;
+  }
+  /* 参考截图：六边形 HUD 时间轴（左侧） */
+  .wm-hex {
+    left: 3%; top: 30%; width: 300px; height: 300px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20300%20300'%3E%3Cg%20fill%3D'none'%20stroke%3D'%233b82f6'%20opacity%3D'0.5'%3E%3Cpath%20d%3D'M60%20150%20L90%20128%20L120%20150%20L120%20194%20L90%20216%20L60%20194%20Z'%20stroke-width%3D'1.6'/%3E%3Cpath%20d%3D'M170%20150%20L200%20128%20L230%20150%20L230%20194%20L200%20216%20L170%20194%20Z'%20stroke-width%3D'1.6'/%3E%3Cpath%20d%3D'M120%20170%20L170%20170'%20stroke-width%3D'1.5'%20stroke%3D'%2322d3ee'/%3E%3Cpath%20d%3D'M90%20150%20L90%2090%20L120%2080'%20stroke-width%3D'1.2'%20stroke%3D'%2348a0ff'/%3E%3Cpath%20d%3D'M200%20150%20L200%2090%20L170%2080'%20stroke-width%3D'1.2'%20stroke%3D'%2348a0ff'/%3E%3Cpath%20d%3D'M90%20194%20L90%20250%20L120%20260'%20stroke-width%3D'1.2'%20stroke%3D'%2348a0ff'/%3E%3Cpath%20d%3D'M200%20194%20L200%20250%20L170%20260'%20stroke-width%3D'1.2'%20stroke%3D'%2348a0ff'/%3E%3C/g%3E%3Cg%20fill%3D'%2322d3ee'%20opacity%3D'0.85'%3E%3Ccircle%20cx%3D'90'%20cy%3D'150'%20r%3D'3'/%3E%3Ccircle%20cx%3D'170'%20cy%3D'150'%20r%3D'3'/%3E%3Ccircle%20cx%3D'90'%20cy%3D'90'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'200'%20cy%3D'90'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'90'%20cy%3D'250'%20r%3D'2.5'/%3E%3Ccircle%20cx%3D'200'%20cy%3D'250'%20r%3D'2.5'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.16;
+  }
+  .wm-fp {
+    right: -70px; bottom: -60px; width: 340px; height: 340px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20260%20260'%3E%3Cg%20fill%3D'none'%20stroke%3D'%234a6fb0'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20opacity%3D'0.6'%3E%3Cpath%20d%3D'M130%2018%20C%2072%2026%2C%2054%2084%2C%2052%20132'/%3E%3Cpath%20d%3D'M130%2038%20C%2088%2044%2C%2070%2090%2C%2068%20132'/%3E%3Cpath%20d%3D'M130%2058%20C%20102%2064%2C%2086%2098%2C%2086%20132'/%3E%3Cpath%20d%3D'M130%2078%20C%20114%2082%2C%20102%20106%2C%20102%20132'/%3E%3Cpath%20d%3D'M130%2018%20C%20188%2026%2C%20206%2084%2C%20208%20132'/%3E%3Cpath%20d%3D'M130%2038%20C%20172%2044%2C%20190%2090%2C%20192%20132'/%3E%3Cpath%20d%3D'M130%2058%20C%20158%2064%2C%20174%2098%2C%20174%20132'/%3E%3Cpath%20d%3D'M130%2078%20C%20146%2082%2C%20158%20106%2C%20158%20132'/%3E%3Cpath%20d%3D'M52%20132%20C%2050%20176%2C%2088%20224%2C%20130%20226'/%3E%3Cpath%20d%3D'M68%20132%20C%2068%20172%2C%20102%20208%2C%20130%20210'/%3E%3Cpath%20d%3D'M86%20132%20C%2086%20164%2C%20108%20192%2C%20130%20194'/%3E%3Cpath%20d%3D'M208%20132%20C%20210%20176%2C%20172%20224%2C%20130%20226'/%3E%3Cpath%20d%3D'M192%20132%20C%20192%20172%2C%20158%20208%2C%20130%20210'/%3E%3Cpath%20d%3D'M174%20132%20C%20174%20164%2C%20152%20192%2C%20130%20194'/%3E%3C/g%3E%3Cg%20fill%3D'none'%20stroke%3D'%2322d3ee'%20stroke-width%3D'1.2'%20opacity%3D'0.45'%3E%3Ccircle%20cx%3D'130'%20cy%3D'130'%20r%3D'20'/%3E%3Cpath%20d%3D'M130%20110%20a20%2020%200%200%201%2020%2026'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.16;
+  }
+  .wm-foot {
+    left: -60px; bottom: -40px; width: 280px; height: 380px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20220%20300'%3E%3Cg%20fill%3D'none'%20stroke%3D'%238f4a56'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20opacity%3D'0.6'%3E%3Cpath%20d%3D'M60%2030%20C%2040%2040%2C%2030%2090%2C%2034%20150'/%3E%3Cpath%20d%3D'M160%2030%20C%20180%2040%2C%20190%2090%2C%20186%20150'/%3E%3Cpath%20d%3D'M60%2030%20C%2080%2018%2C%20140%2018%2C%20160%2030'/%3E%3Cpath%20d%3D'M34%20150%20C%2038%20210%2C%2060%20270%2C%20110%20282'/%3E%3Cpath%20d%3D'M186%20150%20C%20182%20210%2C%20160%20270%2C%20110%20282'/%3E%3Cpath%20d%3D'M110%20282%20C%2096%20280%2C%2088%20276%2C%2088%20268'/%3E%3Cpath%20d%3D'M110%20282%20C%20124%20280%2C%20132%20276%2C%20132%20268'/%3E%3C/g%3E%3Cg%20fill%3D'none'%20stroke%3D'%2322d3ee'%20stroke-width%3D'1.2'%20opacity%3D'0.35'%3E%3Cpath%20d%3D'M60%2060%20l%2012%2014%20M100%2060%20l%2014%2012%20M130%2058%20l%2014%2010%20M160%2060%20l%2010%2016'/%3E%3Cpath%20d%3D'M56%20110%20l%2014%2012%20M100%20108%20l%2014%2010%20M150%20108%20l%2012%2012%20M188%20110%20l%208%2014'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.14;
+  }
+  .wm-forensic {
+    right: 5%; top: 12%; width: 300px; height: 300px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20260%20260'%3E%3Cg%20fill%3D'none'%20stroke%3D'%234a6fb0'%20stroke-width%3D'2.2'%20stroke-linecap%3D'round'%20opacity%3D'0.6'%3E%3Ccircle%20cx%3D'110'%20cy%3D'110'%20r%3D'58'/%3E%3Cpath%20d%3D'M152%20152%20L%20196%20196'%20stroke-width%3D'6'/%3E%3Ccircle%20cx%3D'110'%20cy%3D'110'%20r%3D'42'%20stroke%3D'%2322d3ee'%20opacity%3D'0.55'/%3E%3Cpath%20d%3D'M110%2072%20a38%2038%200%200%201%2038%2038'%20stroke%3D'%2322d3ee'%20opacity%3D'0.5'/%3E%3C/g%3E%3Cg%20fill%3D'none'%20stroke%3D'%238f4a56'%20stroke-width%3D'1.8'%20opacity%3D'0.6'%3E%3Cpath%20d%3D'M52%20210%20C%2080%20180%2C%2090%20240%2C%20118%20210%20S%20156%20240%2C%20184%20210'/%3E%3Cpath%20d%3D'M52%20224%20C%2080%20194%2C%2090%20254%2C%20118%20224%20S%20156%20254%2C%20184%20224'/%3E%3Cpath%20d%3D'M52%20238%20C%2080%20208%2C%2090%20268%2C%20118%20238%20S%20156%20268%2C%20184%20238'/%3E%3Ccircle%20cx%3D'52'%20cy%3D'224'%20r%3D'2.5'%20fill%3D'%238f4a56'/%3E%3Ccircle%20cx%3D'118'%20cy%3D'224'%20r%3D'2.5'%20fill%3D'%238f4a56'/%3E%3Ccircle%20cx%3D'184'%20cy%3D'224'%20r%3D'2.5'%20fill%3D'%238f4a56'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.12;
+  }
+  /* 落点辉光，增强科技纵深 */
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.26;
+  }
+  .bg-glow.g1 { width: 460px; height: 460px; left: -130px; top: 26%; background: #2563eb; }
+  .bg-glow.g2 { width: 400px; height: 400px; right: -90px; top: 52%; background: #0891b2; }
+  .bg-glow.g3 { width: 340px; height: 340px; left: 42%; bottom: -130px; background: #dc2626; }
+  .bg-glow.g4 { width: 300px; height: 300px; right: 30%; top: 8%; background: #3b82f6; }
+
+  /* ====== 页头（HUD 终端） ====== */
+  .header {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(100deg, rgba(6, 14, 40, 0.96) 0%, rgba(10, 24, 63, 0.94) 50%, rgba(13, 28, 72, 0.92) 100%);
+    color: var(--text);
+    padding: 30px 40px;
+    border-bottom: 1px solid var(--line-cyan);
+    box-shadow: 0 6px 30px rgba(10, 30, 90, 0.6), inset 0 1px 0 rgba(120, 200, 255, 0.3);
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(8px);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan) 50%, transparent);
+    opacity: 0.95;
+  }
+  .header .scan {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: linear-gradient(180deg, transparent, var(--cyan), transparent);
+    opacity: 0.55; animation: scanMove 5s linear infinite;
+  }
+  @keyframes scanMove { from { left: -2%; } to { left: 102%; } }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #eaf2ff;
+    text-shadow: 0 0 16px rgba(59, 130, 246, 0.55);
+  }
+  .header .subtitle {
+    font-size: 14px;
+    color: var(--cyan);
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    opacity: 0.95;
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+  }
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--red) 0%, #b91c1c 100%);
+    color: #fff;
+    font-size: 12px;
+    padding: 3px 12px;
+    border-radius: 12px;
+    margin-left: 10px;
+    font-weight: 600;
+    box-shadow: var(--glow-red), 0 0 6px rgba(239,68,68,0.7);
+    letter-spacing: 1px;
+  }
+  .header .watermark-word {
+    position: absolute; right: 42px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 80px; font-weight: 900;
+    color: rgba(120, 200, 255, 0.08);
+    letter-spacing: 10px;
+    user-select: none;
+  }
+
+  /* ====== 页签（终端 Tab） ====== */
+  .tabs {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    background: rgba(5, 12, 34, 0.9);
+    border-bottom: 2px solid var(--line);
+    padding: 0 40px;
+    backdrop-filter: blur(6px);
+  }
+  .tab {
+    padding: 16px 28px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    margin-bottom: -2px;
+    letter-spacing: 1px;
+    position: relative;
+  }
+  .tab:hover { color: var(--cyan); background: rgba(34, 211, 238, 0.08); text-shadow: 0 0 8px rgba(34,211,238,0.5); }
+  .tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--red);
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(34,211,238,0.5);
+  }
+  .tab .icon { margin-right: 6px; font-size: 16px; }
+
+  /* ====== 主容器 ====== */
+  .container {
+    position: relative;
+    z-index: 2;
+    padding: 24px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .panel { display: none; animation: fadeIn 0.4s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ====== 信息条（HUD 框） ====== */
+  .info-bar {
+    position: relative;
+    background: var(--panel);
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--red);
+    border-top: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(6, 20, 60, 0.6), inset 0 0 24px rgba(20, 60, 140, 0.22);
+    backdrop-filter: blur(14px);
+  }
+  .info-bar::before,
+  .info-bar::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px; border: 2px solid var(--cyan); opacity: 0.75;
+  }
+  .info-bar::before { left: -2px; top: -2px; border-right: none; border-bottom: none; }
+  .info-bar::after { right: -2px; bottom: -2px; border-left: none; border-top: none; }
+  .info-bar .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+  }
+  .info-bar .desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ====== 图表面板 ====== */
+  .chart-container {
+    position: relative;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 24px rgba(6, 20, 60, 0.6), inset 0 0 30px rgba(20, 60, 140, 0.18);
+    margin-bottom: 20px;
+    backdrop-filter: blur(14px);
+  }
+  .chart-container::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.8;
+  }
+  #graph { width: 100%; height: 720px; }
+  #ideograph { width: 100%; height: 680px; }
+
+  /* ====== 能力卡片 ====== */
+  .capability-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .capability-card {
+    position: relative;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 18px 20px;
+    border-left: 4px solid var(--blue);
+    border-top: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 16px rgba(6, 20, 60, 0.5), inset 0 0 20px rgba(20, 60, 140, 0.16);
+    transition: all 0.3s;
+    backdrop-filter: blur(14px);
+  }
+  .capability-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--glow-blue), 0 10px 30px rgba(20, 60, 140, 0.5);
+  }
+  .capability-card.core { border-left-color: var(--red); }
+  .capability-card.key { border-left-color: var(--gold); }
+  .capability-card.basic { border-left-color: var(--blue-bright); }
+  .cap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cap-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+  .cap-stars { font-size: 14px; color: var(--red-bright); text-shadow: 0 0 8px rgba(239,68,68,0.5); }
+  .cap-content {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+  .cap-content b { color: var(--cyan); font-weight: 600; }
+  .cap-meta {
+    font-size: 12px;
+    color: var(--cyan);
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.28);
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+
+  /* ====== 场景卡片 ====== */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .scenario-card {
+    position: relative;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 18px;
+    border-top: 4px solid var(--blue);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 16px rgba(6, 20, 60, 0.5), inset 0 0 20px rgba(20, 60, 140, 0.16);
+    transition: all 0.3s;
+    backdrop-filter: blur(14px);
+  }
+  .scenario-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow-blue), 0 8px 26px rgba(20, 60, 140, 0.5);
+  }
+  .scenario-card .num {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--blue) 0%, #1d4ed8 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    box-shadow: 0 0 12px rgba(59,130,246,0.6);
+    letter-spacing: 1px;
+  }
+  .scenario-card .title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+  .scenario-card .row { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-bottom: 6px; }
+  .scenario-card .label { color: var(--cyan); font-weight: 600; margin-right: 4px; }
+  .scenario-card .tag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.14);
+    color: #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.32);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 4px;
+    margin-top: 4px;
+  }
+  .scenario-card .tag.green { background: rgba(52, 211, 153, 0.14); color: #a7f3d0; border-color: rgba(52,211,153,0.32); }
+  .scenario-card .tag.blue { background: rgba(59, 130, 246, 0.14); color: #c7e0ff; border-color: rgba(59,130,246,0.32); }
+
+  /* ====== 思政卡片 ====== */
+  .ideology-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .ideology-card {
+    position: relative;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 18px;
+    border-top: 4px solid var(--red);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 16px rgba(6, 20, 60, 0.5), inset 0 0 20px rgba(20, 60, 140, 0.16);
+    transition: all 0.3s;
+    overflow: hidden;
+    backdrop-filter: blur(14px);
+  }
+  .ideology-card::after {
+    content: '思政';
+    position: absolute;
+    right: -14px; top: 6px;
+    font-size: 40px; font-weight: 900;
+    color: rgba(239, 68, 68, 0.1);
+    letter-spacing: 2px;
+  }
+  .ideology-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--glow-red), 0 8px 26px rgba(120, 30, 40, 0.45);
+  }
+  .ideology-card .theme-num {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--red) 0%, #b91c1c 100%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 0 12px rgba(239,68,68,0.5);
+  }
+  .ideology-card .theme-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: 1px; }
+  .ideology-card .theme-desc { font-size: 12px; color: var(--text-dim); line-height: 1.8; margin-bottom: 8px; }
+  .ideology-card .theme-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .ideology-card .itag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.14);
+    color: #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.32);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .ideology-card .theme-carrier {
+    font-size: 12px;
+    color: var(--cyan);
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.28);
+    padding: 6px 10px;
+    border-radius: 6px;
+    line-height: 1.6;
+  }
+
+  /* ====== 板块卡片 ====== */
+  .ideology-block-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .ideology-block-card {
+    position: relative;
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 16px 18px;
+    border-left: 4px solid var(--red);
+    border-top: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 16px rgba(6, 20, 60, 0.5), inset 0 0 20px rgba(20, 60, 140, 0.16);
+    transition: all 0.3s;
+    backdrop-filter: blur(14px);
+  }
+  .ideology-block-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow-red), 0 8px 26px rgba(120, 30, 40, 0.45);
+  }
+  .ideology-block-card .blk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ideology-block-card .blk-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .ideology-block-card .blk-hours {
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+    background: rgba(251, 191, 36, 0.14);
+    border: 1px solid rgba(251, 191, 36, 0.32);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .ideology-block-card .blk-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ideology-block-card .btag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.14);
+    color: #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.32);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+
+  /* ====== 页脚 & 图例 ====== */
+  .footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 12px;
+    border-top: 1px solid var(--line);
+    margin-top: 30px;
+    letter-spacing: 1px;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    backdrop-filter: blur(14px);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px rgba(120,200,255,0.5); }
+
+  /* ====== 移动端响应式（手机扫码观看） ====== */
+  @media (max-width: 768px) {
+    .header { padding: 18px 16px; }
+    .header h1 { font-size: 19px; letter-spacing: 1px; }
+    .header .subtitle { font-size: 12px; }
+    .header .watermark-word { font-size: 44px; right: 14px; letter-spacing: 3px; }
+    .badge { font-size: 11px; padding: 2px 9px; margin-left: 6px; }
+    .wm-cube { width: 240px; height: 240px; left: 60%; top: 8%; transform: translateX(0); opacity: 0.12; }
+    .wm-hex { width: 180px; height: 180px; left: 2%; top: 40%; opacity: 0.12; }
+    .wm-fp { width: 200px; height: 200px; opacity: 0.12; }
+    .wm-foot { width: 160px; height: 220px; opacity: 0.1; }
+    .wm-forensic { width: 180px; height: 180px; opacity: 0.09; }
+
+    .tabs {
+      padding: 0 4px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { padding: 13px 13px; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+
+    .container { padding: 14px 10px; }
+    .chart-container { padding: 10px 6px; border-radius: 8px; }
+    #graph { height: 560px; }
+    #ideograph { height: 560px; }
+
+    .capability-grid,
+    .scenario-grid,
+    .ideology-block-grid { grid-template-columns: 1fr; }
+    .ideology-grid { grid-template-columns: 1fr; }
+    .legend { gap: 10px; font-size: 11px; padding: 10px 8px; }
+    .footer { font-size: 11px; padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 刑技背景水印层（极低透明度，隐藏元素） -->
+<div class="bg-watermarks">
+  <div class="wm wm-grid"></div>
+  <div class="wm wm-cube"></div>
+  <div class="wm wm-hex"></div>
+  <div class="wm wm-fp"></div>
+  <div class="wm wm-foot"></div>
+  <div class="wm wm-forensic"></div>
+  <div class="bg-glow g1"></div>
+  <div class="bg-glow g2"></div>
+  <div class="bg-glow g3"></div>
+  <div class="bg-glow g4"></div>
+</div>
+
+<div class="header">
+  <div class="scan"></div>
+  <div class="watermark-word">公安</div>
+  <h1>《公安信息化应用基础》课程
+    <span class="badge">公安特色版</span>
+  </h1>
+  <div class="subtitle">公安业务场景知识图谱 · 警务能力画像 · 素养思政标签 · 第2学期专业基础课</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-target="scenarios-view" onclick="switchTab('scenarios-view')">
+    <span class="icon">🔗</span>场景知识图谱
+  </div>
+  <div class="tab" data-target="capability-view" onclick="switchTab('capability-view')">
+    <span class="icon">📊</span>警务能力画像
+  </div>
+  <div class="tab" data-target="overview-view" onclick="switchTab('overview-view')">
+    <span class="icon">📋</span>全景视图
+  </div>
+  <div class="tab" data-target="ideology-view" onclick="switchTab('ideology-view')">
+    <span class="icon">🚩</span>素养思政标签
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 视图1：场景知识图谱 -->
+  <div id="scenarios-view" class="panel active">
+    <div class="info-bar">
+      <div class="title">📌 公安业务场景知识图谱（力导向图）</div>
+      <div class="desc">以6大公安业务场景为中心，辐射展示涉及的知识点、对接的项目板块、培养层级与对标警务岗位。节点可拖动，鼠标悬停查看详情。</div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>公安业务场景</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>知识点</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>项目板块</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>警务岗位</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>培养层级</div>
+    </div>
+
+    <div class="chart-container">
+      <div id="graph"></div>
+    </div>
+  </div>
+
+  <!-- 视图2：警务能力画像 -->
+  <div id="capability-view" class="panel">
+    <div class="info-bar">
+      <div class="title">📌 警务能力画像（8维能力 · 卡片视图）</div>
+      <div class="desc">8维能力轴 × 本课程贡献度。核心培养（★★★）4项、重点培养（★★）1项、启蒙/意识培养（★）3项。点击下方面卡可查看每项能力的内涵、行为、载体。</div>
+    </div>
+
+    <div class="capability-grid" id="cap-grid"></div>
+  </div>
+
+  <!-- 视图3：全景视图 -->
+  <div id="overview-view" class="panel">
+    <div class="info-bar">
+      <div class="title">📌 全景视图：公安业务场景详情</div>
+      <div class="desc">所有公安业务场景的完整卡片视图，便于直接复制到教学材料中。</div>
+    </div>
+
+    <h3 style="color: #ef4444; margin-bottom: 10px; font-size: 20px; letter-spacing: 2px; text-shadow: 0 0 12px rgba(239,68,68,0.5);">▍六大警务实战场景全解析</h3>
+    <div class="scenario-grid" id="scenario-grid"></div>
+
+    <div class="info-bar" style="margin-top:30px">
+      <div class="title">📌 全景视图：警务能力维度</div>
+      <div class="desc">所有能力维度的完整卡片视图，含本课程贡献度、行为表现、培养载体。</div>
+    </div>
+
+    <h3 style="color: #3b82f6; margin-bottom: 10px; font-size: 20px; letter-spacing: 2px; text-shadow: 0 0 12px rgba(59,130,246,0.5);">▍八维警务能力画像全解析</h3>
+    <div class="capability-grid" id="cap-grid-2"></div>
+  </div>
+
+  <!-- 视图4：素养思政标签 -->
+  <div id="ideology-view" class="panel">
+    <div class="info-bar">
+      <div class="title">📌 课程思政：六大素养主题</div>
+      <div class="desc">本课程六大项目板块承载的素养与思政标签，归纳为六大主题。每项主题标注培养载体（对应项目板块），实现思政元素与专业教学的有机融入。</div>
+    </div>
+
+    <div class="ideology-grid" id="ideology-grid"></div>
+
+    <div class="info-bar" style="margin-top:30px">
+      <div class="title">📌 项目板块素养标签一览</div>
+      <div class="desc">各项目板块对应的素养/思政标签明细，体现思政元素在教学项目中的落点。</div>
+    </div>
+
+    <div class="ideology-block-grid" id="ideology-block-grid"></div>
+
+    <div class="info-bar" style="margin-top:30px">
+      <div class="title">📌 素养思政标签关系图谱</div>
+      <div class="desc">六大素养主题（红色）承载具体素养标签（灰色），素养标签经对应项目板块（蓝色）落地于教学实施。鼠标悬停查看承载与落点关系，节点可拖拽、滚轮缩放。</div>
+    </div>
+
+    <div class="chart-container">
+      <div id="ideograph"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  数据来源：《公安信息化应用基础》课程教学大纲<br>
+  公安知识图谱 · 警务能力画像 · 素养思政标签 · 共6大公安业务场景、8维能力画像、6大素养主题 · 第2学期专业基础必修课 · 32学时/2学分
+</div>
+
+<script>
+// ========== 数据 ==========
+const SCENARIOS = [
+  {
+    name: '场景一：刑事案件现场电子设备处置',
+    task: '现场勘查中对涉案手机、电脑、U盘等设备进行规范封存与初步提取，保全证据条件',
+    kp: '电子数据基础概念；数据与载体分离特性；静态提取流程；动态提取（录屏）规范；封存规范',
+    key: '一线民警在鉴定人员到场前，能正确断电/保持开机、贴封条、全程录屏，不破坏证据、不污染数据',
+    project: 'P3 公安电子数据认知与取证基础（6学时）',
+    level: '认知层 + 操作层',
+    post: '刑事技术民警（现场勘查方向）'
+  },
+  {
+    name: '场景二：案件线索初查与数据筛查',
+    task: '面对海量涉案数据，按属性快速定位关键文件、构建时间-空间线索',
+    kp: '六边形认知模型六维度（文件属性、时间戳、位置信息、设备关联、哈希值、关联关系）；系统日志提取与初步分析；时空锚点构建',
+    key: '从“看内容”转向“看属性”：不动数据本体，通过属性维度锁定“谁、何时、何地、用什么设备”',
+    project: 'P3 + 实训二/四（系统日志取证）+ 实训五（六边形模型分析）',
+    level: '认知层 + 应用层',
+    post: '刑事技术民警、情报研判民警'
+  },
+  {
+    name: '场景三：网络案件网页取证与在线提取',
+    task: '对网络违法信息进行在线提取固定，并规范撰写取证报告',
+    kp: '计算机网络基础（IP/MAC、DNS解析）；网络在线提取程序要点；网页取证流程；取证文书撰写',
+    key: '办理网络案件时按程序固定网页证据，文书要素齐全、过程可复现',
+    project: 'P4 网络技术在公安工作中的应用（4学时）+ 实训一（网络地址查询及更改）',
+    level: '操作层',
+    post: '网络安全保卫民警'
+  },
+  {
+    name: '场景四：公安网日常办公与专网安全',
+    task: '规范使用公安专网，防范“一机两用”等违规行为',
+    kp: '公安专网概念与特点；“一机两用”监控系统原理与处罚规定；“四个严禁、八条纪律”；网络安全法基本要求',
+    key: '全体新警入职即用的纪律红线与技术常识，属全警种通识能力',
+    project: 'P1 公安信息化基础认知（2学时）+ P4第4.4节',
+    level: '认知层',
+    post: '全警种通用（新警必训）'
+  },
+  {
+    name: '场景五：案情汇报与法律文书制作',
+    task: '制作案情汇报演示文稿，完成公文格式排版',
+    kp: '公安文稿演示方向设计；文字编辑与段落排版；OCR图片转文字；案件汇报文稿制作',
+    key: '办案民警日常最高频的信息化工作：把案件信息转化为规范、清晰、可信的汇报材料',
+    project: 'P2 公安文稿电子制作（1学时）',
+    level: '操作层',
+    post: '全警种通用'
+  },
+  {
+    name: '场景六：涉案数据安全管理',
+    task: '对敏感案件数据实施加密保护与安全传输',
+    kp: '信息安全基础概念；对称加密（含国产SM4算法）；非对称加密；公钥私钥应用',
+    key: '卷宗、证据材料流转中的保密操作，防止办案信息泄露',
+    project: 'P5 信息安全工具应用（3学时）+ 实训三（加密原理与实现）',
+    level: '认知层 + 操作层',
+    post: '全警种通用、保密岗位重点'
+  }
+];
+
+const CAPS = [
+  { id: 'C1', name: '电子数据认知力', core: '理解电子数据“数据即证据”的本质，能从属性维度系统认知电子数据', act: '拿到一个电子文件，能本能地查看六维度属性并判断证据价值', carrier: 'P3 + 实训五（六边形模型）', level: '核心培养', stars: 3 },
+  { id: 'C2', name: '信息化基础操作力', core: '计算机操作、办公软件、网络配置等警务日常信息化技能', act: '熟练完成文稿制作、IP配置、工具使用等日常任务', carrier: 'P1/P2/P4 + 实训一', level: '核心培养', stars: 3 },
+  { id: 'C3', name: '现场处置规范力', core: '电子设备现场封存、初步提取的程序规范与细节把控', act: '封条张贴正确、录屏要素完整、静态动态流程不混淆', carrier: 'P3（现场取证要点）', level: '重点培养', stars: 2 },
+  { id: 'C4', name: '取证技术执行力', core: '运用专业工具完成数据提取、固定、完整性校验的技术能力', act: '能计算哈希值并解释作用；能完成网页在线提取', carrier: 'P3/P4 + 实训二/四（日志取证）', level: '启蒙培养', stars: 1 },
+  { id: 'C5', name: '法律程序应用力', core: '依法依规开展信息化与取证操作的法律素养', act: '操作前知法规依据，流程中文书规范，能识别违规后果', carrier: 'P3/P4（取证文书、一机两用、四个严禁）', level: '意识培养', stars: 1 },
+  { id: 'C6', name: '报告文书表达力', core: '将分析结果转化为规范文书与汇报材料的能力', act: '案情汇报文稿清晰规范；取证报告要素完整', carrier: 'P2 + P4（取证文书）', level: '核心培养', stars: 3 },
+  { id: 'C7', name: '数据安全保密力', core: '数据加密、传输安全、保密纪律的自觉与技能', act: '敏感数据加密处理，专网使用不越界，签署保密承诺并践行', carrier: 'P5 + 实训三 + P1（纪律）', level: '核心培养', stars: 3 },
+  { id: 'C8', name: '综合研判思维', core: '多维信息关联、时空锚点构建、复杂场景研判能力', act: '用六边形模型构建“谁-何时-何地-何设备”证据链', carrier: 'P3 + 实训五（时空锚点）', level: '启蒙培养', stars: 1 }
+];
+
+const IDEOLOGY = [
+  { num: '主题一', name: '证据意识', desc: '以“数据即证据”的理念认知电子数据，从踏入课程第一步起建立证据链思维，为证据收集、固定与运用奠定思想基础。', tags: ['“数据即证据”的证据意识', '证据链思维', '时空锚点意识'], carrier: 'P3（核心板块）· P6（综合实训）' },
+  { num: '主题二', name: '法治与程序正义', desc: '程序正义意识与法治意识贯穿教学始终，强调依法依规开展信息化与取证操作，让学生知敬畏、守底线。', tags: ['程序正义意识', '法治意识', '依法依规操作'], carrier: 'P3 · P6（贯穿全部实训）' },
+  { num: '主题三', name: '科技自信与科技强警', desc: '结合国产芯片、国产密码算法（SM4）等发展成就，培养民族自豪感与技术自信，树立科技强警的职业追求。', tags: ['民族自豪感（国产芯片/AI之路）', '科技强警意识', '技术自信（国产算法）'], carrier: 'P1 · P5' },
+  { num: '主题四', name: '网络安全与国家意识', desc: '在公安专网与网络技术教学中融入网络安全意识、网络主权与国家基础设施安全意识，筑牢总体国家安全观。', tags: ['网络安全意识', '网络主权意识', '国家基础设施安全意识'], carrier: 'P4 · P1（专网纪律）' },
+  { num: '主题五', name: '保密纪律', desc: '数据安全保密的自觉与纪律养成，贯穿专网使用、数据处理、材料流转全过程，做到不失密、不泄密。', tags: ['保密纪律', '数据安全保密自觉', '“四个严禁、八条纪律”'], carrier: 'P1 · P5 · P6' },
+  { num: '主题六', name: '职业素养与协作', desc: '严谨规范的职业习惯、不重不漏的系统分析习惯与团队协作意识，塑造刑事技术民警细致、严谨、专业的职业品格。', tags: ['团队协作意识', '严谨规范的职业习惯', '不重不漏的系统分析习惯', '严谨细致的专业态度'], carrier: 'P2 · P3 · P6' }
+];
+
+const IDEO_BLOCKS = [
+  { name: 'P1 公安信息化基础认知', hours: '理论板块 · 2学时', tags: ['民族自豪感（国产芯片/AI之路）', '科技强警意识'] },
+  { name: 'P2 公安文稿电子制作', hours: '实践板块 · 1学时 · 翻转课堂', tags: ['团队协作意识', '严谨规范的职业习惯'] },
+  { name: 'P3 公安电子数据认知与取证基础 ★核心板块', hours: '理论+模型教学 · 6学时', tags: ['“数据即证据”的证据意识', '程序正义意识', '不重不漏的系统分析习惯'] },
+  { name: 'P4 网络技术在公安工作中的应用', hours: '理论板块 · 4学时', tags: ['网络安全意识', '网络主权与国家基础设施安全意识'] },
+  { name: 'P5 信息安全工具应用', hours: '理论板块 · 3学时', tags: ['技术自信（对比国产与国际算法）', '保密纪律'] },
+  { name: 'P6 综合实训项目群', hours: '实验实训 · 5个项目 · 16学时', tags: ['证据意识', '法治意识', '严谨细致的专业态度（贯穿全部实训）'] }
+];
+
+// ========== Tab切换 ==========
+function switchTab(target) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[data-target="${target}"]`).classList.add('active');
+  document.getElementById(target).classList.add('active');
+  // 重绘echarts避免容器尺寸问题
+  setTimeout(() => {
+    if (target === 'scenarios-view' && graphChart) graphChart.resize();
+    if (target === 'ideology-view') {
+      if (!ideoChart) buildIdeoGraph();
+      else ideoChart.resize();
+    }
+  }, 100);
+}
+
+// ========== 视图1：力导向图 ==========
+let graphChart;
+// 响应式判断（手机扫码观看）
+const isMobile = () => window.innerWidth < 768;
+// 环形初始位置，避免力导向图开局粘成一团
+function ringXY(i, n, radius, phase) {
+  const a = (Math.PI * 2 * i) / n + (phase || 0);
+  return { x: Math.cos(a) * radius, y: Math.sin(a) * radius };
+}
+function buildGraph() {
+  const nodes = [];
+  const links = [];
+  let id = 0;
+  SCENARIOS.forEach((s, i) => {
+    // 场景节点
+    const sNid = `S${i}`;
+    nodes.push({
+      id: sNid,
+      name: s.name,
+      category: 0,
+      symbolSize: 50,
+      label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#ffffff' },
+      itemStyle: { shadowBlur: 20, shadowColor: 'rgba(239,68,68,0.8)' }
+    });
+    // 知识点节点（拆分）
+    const kps = s.kp.split(/[；;]/);
+    kps.forEach((kp, j) => {
+      if (!kp.trim()) return;
+      const kNid = `S${i}-K${j}`;
+      nodes.push({
+        id: kNid,
+        name: kp.trim(),
+        category: 1,
+        symbolSize: 28,
+        label: { show: true, fontSize: 10, color: '#c7e0ff' },
+        itemStyle: { shadowBlur: 10, shadowColor: 'rgba(59,130,246,0.6)' }
+      });
+      links.push({ source: sNid, target: kNid, relation: '涉及知识点' });
+    });
+    // 项目板块节点
+    const pNid = `S${i}-P`;
+    nodes.push({
+      id: pNid,
+      name: s.project,
+      category: 2,
+      symbolSize: 38,
+      label: { show: true, fontSize: 11, fontWeight: 'bold', color: '#fffbeb' },
+      itemStyle: { shadowBlur: 16, shadowColor: 'rgba(251,191,36,0.7)' }
+    });
+    links.push({ source: sNid, target: pNid, relation: '教学载体' });
+    // 培养层级节点
+    const lNid = `S${i}-L`;
+    nodes.push({
+      id: lNid,
+      name: s.level,
+      category: 4,
+      symbolSize: 25,
+      label: { show: true, fontSize: 10, color: '#ede9fe' }
+    });
+    links.push({ source: sNid, target: lNid, relation: '培养层级' });
+    // 警务岗位节点
+    const posts = s.post.split(/[、，,]/);
+    posts.forEach((p, j) => {
+      if (!p.trim()) return;
+      const tNid = `S${i}-T${j}`;
+      nodes.push({
+        id: tNid,
+        name: p.trim(),
+        category: 3,
+        symbolSize: 32,
+        label: { show: true, fontSize: 10, fontWeight: 'bold', color: '#a7f3d0' },
+        itemStyle: { shadowBlur: 12, shadowColor: 'rgba(52,211,153,0.6)' }
+      });
+      links.push({ source: sNid, target: tNid, relation: '对标岗位' });
+    });
+  });
+
+  // 均匀环形初始位置：避免节点开局聚集，力导向收敛更均匀
+  nodes.forEach((n, i) => {
+    const p = ringXY(i, nodes.length, 340);
+    n.x = p.x + (Math.random() - 0.5) * 60;
+    n.y = p.y + (Math.random() - 0.5) * 60;
+  });
+
+  graphChart = echarts.init(document.getElementById('graph'));
+  graphChart.setOption({
+    tooltip: {
+      backgroundColor: 'rgba(6,14,40,0.95)',
+      borderColor: 'rgba(0,220,255,0.5)',
+      borderWidth: 1,
+      textStyle: { color: '#eaf2ff', fontSize: isMobile() ? 13 : 12 },
+      formatter: (p) => {
+        if (p.dataType === 'edge') return `<b style="color:#22d3ee">${p.data.relation}</b>`;
+        return `<b style="color:#22d3ee">${p.name}</b><br/>${CAT_DESC[p.dataIndex % 5] || ''}`;
+      },
+      confine: true
+    },
+    legend: [{
+      data: ['公安业务场景', '知识点', '项目板块', '警务岗位', '培养层级'],
+      textStyle: { fontSize: isMobile() ? 11 : 12, color: '#eaf2ff' },
+      top: 10,
+      itemWidth: 16, itemHeight: 12
+    }],
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      roam: true,
+      draggable: true,
+      categories: [
+        { name: '公安业务场景', itemStyle: { color: '#ef4444' } },
+        { name: '知识点', itemStyle: { color: '#60a5fa' } },
+        { name: '项目板块', itemStyle: { color: '#fbbf24' } },
+        { name: '警务岗位', itemStyle: { color: '#34d399' } },
+        { name: '培养层级', itemStyle: { color: '#a78bfa' } }
+      ],
+      data: nodes,
+      links: links,
+      force: {
+        repulsion: isMobile() ? 540 : 480,
+        edgeLength: isMobile() ? [80, 190] : [70, 170],
+        gravity: 0.03,
+        friction: 0.15
+      },
+      labelLayout: { hideOverlap: true },
+      lineStyle: {
+        color: 'rgba(96,165,250,0.8)',
+        curveness: 0.1,
+        width: 1.2,
+        opacity: 0.8
+      },
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: { width: 3, color: '#22d3ee' },
+        itemStyle: { borderColor: '#22d3ee', borderWidth: 3 }
+      }
+    }]
+  });
+}
+const CAT_DESC = [
+  '公安业务场景：六大警务实战场景',
+  '知识点：本课程覆盖的具体知识单元',
+  '项目板块：教学实施的项目化板块（P1-P5）',
+  '警务岗位：对标的实战岗位',
+  '培养层级：教学目标的认知层级'
+];
+
+// ========== 渲染卡片 ==========
+function renderCapGrid() {
+  const html = CAPS.map(c => {
+    const cssClass = c.stars === 3 ? 'core' : c.stars === 2 ? 'key' : 'basic';
+    return `
+    <div class="capability-card ${cssClass}">
+      <div class="cap-header">
+        <div class="cap-name">${c.id} ${c.name}</div>
+        <div class="cap-stars">${'★'.repeat(c.stars)}${'☆'.repeat(3-c.stars)}</div>
+      </div>
+      <div class="cap-content"><b>能力内涵：</b>${c.core}</div>
+      <div class="cap-content"><b>典型行为：</b>${c.act}</div>
+      <div class="cap-meta"><b>本课程培养载体：</b>${c.carrier}（${c.level}）</div>
+    </div>`;
+  }).join('');
+  document.getElementById('cap-grid').innerHTML = html;
+  document.getElementById('cap-grid-2').innerHTML = html;
+}
+
+function renderScenarioGrid() {
+  const html = SCENARIOS.map((s, i) => {
+    const kps = s.kp.split(/[；;]/).map(k => `<span class="tag blue">${k.trim()}</span>`).join('');
+    const posts = s.post.split(/[、，,]/).map(p => `<span class="tag green">${p.trim()}</span>`).join('');
+    return `
+    <div class="scenario-card">
+      <div class="num">场景 ${i+1}</div>
+      <div class="title">${s.name.replace(/^场景[一二三四五六]：/, '')}</div>
+      <div class="row"><span class="label">典型任务：</span>${s.task}</div>
+      <div class="row"><span class="label">应用要义：</span>${s.key}</div>
+      <div class="row"><span class="label">项目板块：</span><span class="tag">${s.project}</span></div>
+      <div class="row"><span class="label">培养层级：</span>${s.level}</div>
+      <div class="row"><span class="label">涉及知识点：</span>${kps}</div>
+      <div class="row"><span class="label">对标岗位：</span>${posts}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('scenario-grid').innerHTML = html;
+}
+
+function renderIdeology() {
+  const themeHtml = IDEOLOGY.map(t => `
+    <div class="ideology-card">
+      <div class="theme-num">${t.num}</div>
+      <div class="theme-name">${t.name}</div>
+      <div class="theme-desc">${t.desc}</div>
+      <div class="theme-tags">${t.tags.map(x => `<span class="itag">${x}</span>`).join('')}</div>
+      <div class="theme-carrier"><b>培养载体：</b>${t.carrier}</div>
+    </div>`).join('');
+  document.getElementById('ideology-grid').innerHTML = themeHtml;
+
+  const blockHtml = IDEO_BLOCKS.map(b => `
+    <div class="ideology-block-card">
+      <div class="blk-header">
+        <div class="blk-name">${b.name}</div>
+        <div class="blk-hours">${b.hours}</div>
+      </div>
+      <div class="blk-tags">${b.tags.map(x => `<span class="btag">${x}</span>`).join('')}</div>
+    </div>`).join('');
+  document.getElementById('ideology-block-grid').innerHTML = blockHtml;
+}
+
+// ========== 素养思政标签关系图谱 ==========
+// 主题节点
+const IDEO_THEMES = [
+  { name: '证据意识' },
+  { name: '法治与程序正义' },
+  { name: '科技自信与科技强警' },
+  { name: '网络安全与国家意识' },
+  { name: '保密纪律' },
+  { name: '职业素养与协作' }
+];
+// 标签节点：[标签名, 所属主题, 落点板块]
+const IDEO_TAGS = [
+  ['“数据即证据”意识', '证据意识', 'P3'],
+  ['证据链思维', '证据意识', 'P3'],
+  ['时空锚点意识', '证据意识', 'P6'],
+  ['程序正义意识', '法治与程序正义', 'P3'],
+  ['法治意识', '法治与程序正义', 'P6'],
+  ['依法依规操作', '法治与程序正义', 'P6'],
+  ['民族自豪感', '科技自信与科技强警', 'P1'],
+  ['科技强警意识', '科技自信与科技强警', 'P1'],
+  ['技术自信', '科技自信与科技强警', 'P5'],
+  ['网络安全意识', '网络安全与国家意识', 'P4'],
+  ['网络主权意识', '网络安全与国家意识', 'P4'],
+  ['国家基础设施安全意识', '网络安全与国家意识', 'P4'],
+  ['保密纪律养成', '保密纪律', 'P5'],
+  ['数据安全保密自觉', '保密纪律', 'P5'],
+  ['四个严禁、八条纪律', '保密纪律', 'P1'],
+  ['团队协作意识', '职业素养与协作', 'P2'],
+  ['严谨规范的职业习惯', '职业素养与协作', 'P2'],
+  ['不重不漏的系统分析习惯', '职业素养与协作', 'P3'],
+  ['严谨细致的专业态度', '职业素养与协作', 'P6']
+];
+// 板块节点
+const IDEO_BLOCK_NODES = [
+  'P1 信息化基础认知',
+  'P2 公安文稿电子制作',
+  'P3 电子数据认知与取证基础',
+  'P4 网络技术公安应用',
+  'P5 信息安全工具应用',
+  'P6 综合实训项目群'
+];
+
+let ideoChart = null;
+function buildIdeoGraph() {
+  const el = document.getElementById('ideograph');
+  if (!el) return;
+  const nodes = [];
+  const links = [];
+
+  IDEO_THEMES.forEach((t, i) => {
+    const p = ringXY(i, IDEO_THEMES.length, 300);
+    nodes.push({ name: t.name, category: 0, symbolSize: isMobile() ? 66 : 76,
+      x: p.x, y: p.y,
+      label: { fontSize: isMobile() ? 12 : 13, fontWeight: 'bold', color: '#fecaca' },
+      itemStyle: { shadowBlur: 18, shadowColor: 'rgba(239,68,68,0.7)' } });
+  });
+
+  IDEO_TAGS.forEach(([tag, theme, block], i) => {
+    const blockName = IDEO_BLOCK_NODES.find(n => n.startsWith(block + ' ')) || block;
+    const p = ringXY(i, IDEO_TAGS.length, 200);
+    nodes.push({ name: tag, category: 1, symbolSize: isMobile() ? 26 : 30, x: p.x, y: p.y,
+      label: { color: '#cbd5e1' } });
+    links.push({ source: theme, target: tag, value: '承载',
+      lineStyle: { color: 'rgba(239,68,68,0.35)', width: 2, curveness: 0.15 } });
+    links.push({ source: tag, target: blockName, value: '落点',
+      lineStyle: { color: 'rgba(59,130,246,0.5)', width: 2, curveness: 0.15 } });
+  });
+
+  IDEO_BLOCK_NODES.forEach((b, i) => {
+    const p = ringXY(i, IDEO_BLOCK_NODES.length, 110, Math.PI / 6);
+    nodes.push({ name: b, category: 2, symbolSize: isMobile() ? 52 : 60,
+      x: p.x, y: p.y,
+      label: { fontSize: isMobile() ? 11 : 12, fontWeight: 'bold', color: '#c7e0ff' },
+      itemStyle: { shadowBlur: 16, shadowColor: 'rgba(59,130,246,0.7)' } });
+  });
+
+  ideoChart = echarts.init(el);
+  ideoChart.setOption({
+    tooltip: {
+      confine: true,
+      backgroundColor: 'rgba(6,14,40,0.95)',
+      borderColor: 'rgba(0,220,255,0.5)',
+      borderWidth: 1,
+      textStyle: { color: '#eaf2ff', fontSize: isMobile() ? 13 : 12 },
+      formatter: (p) => {
+        if (p.dataType === 'edge') {
+          return `<b style="color:#22d3ee">${p.data.source}</b> —${p.data.value}→ <b style="color:#22d3ee">${p.data.target}</b>`;
+        }
+        if (p.dataType === 'node') {
+          if (p.data.category === 0) return `<b style="color:#ef4444">素养主题</b><br>${p.name}`;
+          if (p.data.category === 1) return `<b>素养标签</b><br>${p.name}`;
+          return `<b style="color:#60a5fa">项目板块</b><br>${p.name}`;
+        }
+        return p.name;
+      }
+    },
+    legend: [{
+      data: ['素养主题', '素养标签', '项目板块'],
+      top: 10,
+      textStyle: { fontSize: isMobile() ? 11 : 12, color: '#eaf2ff' },
+      itemWidth: 18, itemHeight: 12
+    }],
+    color: ['#ef4444', '#94a3b8', '#60a5fa'],
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      roam: true,
+      draggable: true,
+      categories: [{ name: '素养主题' }, { name: '素养标签' }, { name: '项目板块' }],
+      data: nodes,
+      links: links,
+      force: {
+        repulsion: isMobile() ? 540 : 480,
+        edgeLength: isMobile() ? [70, 160] : [60, 140],
+        gravity: 0.04,
+        friction: 0.18
+      },
+      labelLayout: { hideOverlap: true },
+      label: { show: true, position: 'bottom', distance: 5, fontSize: 11, color: '#cbd5e1' },
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: { width: 4 },
+        label: { fontSize: 13, fontWeight: 'bold' }
+      },
+      lineStyle: { opacity: 0.9 }
+    }]
+  });
+}
+
+// ========== 启动 ==========
+window.addEventListener('load', () => {
+  buildGraph();
+  renderCapGrid();
+  renderScenarioGrid();
+  renderIdeology();
+});
+// 窗口缩放（防抖）与手机横竖屏切换时重绘
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (graphChart) graphChart.resize();
+    if (ideoChart) ideoChart.resize();
+  }, 200);
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (graphChart) graphChart.resize();
+    if (ideoChart) ideoChart.resize();
+  }, 300);
+});
+</script>
+</body>
+</html>
